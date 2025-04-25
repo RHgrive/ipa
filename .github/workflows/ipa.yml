@@ -34,7 +34,7 @@ jobs:
 
       # 6. .ipa をアップロード
       - name: Upload IPA artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@4
         with:
           name: IDA-IPA
           path: "IDA Pro - RHgrive.ipa"
