@@ -9,30 +9,37 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      # 1. リポジトリをチェックアウト
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      # 1. ソースチェックアウト
+      - uses: actions/checkout@v3
 
-      # 2. SwiftPM パッケージをアーカイブ（.xcarchive 生成）
+      # 2. .swiftpm 展開（リポジトリに .swiftpm をそのまま置いている場合）
+      - name: Unpack Swift Playground package
+        if: exists('*.swiftpm')
+        run: |
+          unzip -q *.swiftpm -d Project
+
+      # 3. （必要なら）展開先へ移動
+      - name: Change directory
+        run: cd Project
+
+      # 4. アーカイブ生成 (.xcarchive)
       - name: Archive with mxcl/xcodebuild
         uses: mxcl/xcodebuild@v3
         with:
           action: archive
-          scheme: "IDA Pro - RHgrive"    # Package.swift の products.name と同じ
-          platform: iOS                  # iOS 向けビルド
-          configuration: Release         # Release ビルド
+          scheme: "IDA Pro - RHgrive"   # Package.swift の iOSApplication name
+          platform: iOS
+          configuration: Release
 
-      # 3. .ipa をエクスポート
+      # 5. IPA エクスポート
       - name: Export IPA
         run: |
-          # ExportOptions.plist はリポジトリルートに置くか、
-          # 必要ならここで echo して生成してください。
           xcodebuild -exportArchive \
             -archivePath "$(pwd)/IDA Pro - RHgrive.xcarchive" \
-            -exportOptionsPlist ExportOptions.plist \
+            -exportOptionsPlist "$(pwd)/ExportOptions.plist" \
             -exportPath "$(pwd)"
 
-      # 4. .ipa をアーティファクトとしてアップロード
+      # 6. .ipa をアップロード
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v3
         with:
