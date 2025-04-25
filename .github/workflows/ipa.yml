@@ -12,14 +12,7 @@ jobs:
       # 1. ソースチェックアウト
       - uses: actions/checkout@v3
 
-      # 2. .swiftpm 展開（リポジトリに .swiftpm をそのまま置いている場合）
-      - name: Unpack Swift Playground package
-        if: exists('*.swiftpm')
-        run: |
-          unzip -q *.swiftpm -d Project
-
-      # 3. （必要なら）展開先へ移動
-      - name: Change directory
+      - name: go directory
         run: cd Project
 
       # 4. アーカイブ生成 (.xcarchive)
