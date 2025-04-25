@@ -1,30 +1,24 @@
 name: Build IPA from SwiftPM
 
 on:
-  push:
-    branches: [ main ]
+  workflow_dispatch:  # 手動実行トリガー
 
 jobs:
   build:
     runs-on: macos-latest
 
     steps:
-      # 1. ソースチェックアウト
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: go directory
-        run: cd Project
-
-      # 4. アーカイブ生成 (.xcarchive)
+      # CocoaPods や XcodeGen を使わない SwiftPM だけの構成
       - name: Archive with mxcl/xcodebuild
         uses: mxcl/xcodebuild@v3
         with:
           action: archive
-          scheme: "IDA Pro - RHgrive"   # Package.swift の iOSApplication name
+          scheme: "IDA Pro - RHgrive"   # ← Package.swift 内 iOSApplication の name
           platform: iOS
           configuration: Release
 
-      # 5. IPA エクスポート
       - name: Export IPA
         run: |
           xcodebuild -exportArchive \
@@ -32,9 +26,8 @@ jobs:
             -exportOptionsPlist "$(pwd)/ExportOptions.plist" \
             -exportPath "$(pwd)"
 
-      # 6. .ipa をアップロード
       - name: Upload IPA artifact
-        uses: actions/upload-artifact@4
+        uses: actions/upload-artifact@v4
         with:
           name: IDA-IPA
           path: "IDA Pro - RHgrive.ipa"
