@@ -1,1 +1,40 @@
+name: Build IPA from SwiftPM
 
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      # 1. リポジトリをチェックアウト
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2. SwiftPM パッケージをアーカイブ（.xcarchive 生成）
+      - name: Archive with mxcl/xcodebuild
+        uses: mxcl/xcodebuild@v3
+        with:
+          action: archive
+          scheme: "IDA Pro - RHgrive"    # Package.swift の products.name と同じ
+          platform: iOS                  # iOS 向けビルド
+          configuration: Release         # Release ビルド
+
+      # 3. .ipa をエクスポート
+      - name: Export IPA
+        run: |
+          # ExportOptions.plist はリポジトリルートに置くか、
+          # 必要ならここで echo して生成してください。
+          xcodebuild -exportArchive \
+            -archivePath "$(pwd)/IDA Pro - RHgrive.xcarchive" \
+            -exportOptionsPlist ExportOptions.plist \
+            -exportPath "$(pwd)"
+
+      # 4. .ipa をアーティファクトとしてアップロード
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: IDA-IPA
+          path: "IDA Pro - RHgrive.ipa"
