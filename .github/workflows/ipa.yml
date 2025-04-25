@@ -1,33 +1,58 @@
-name: Build IPA from SwiftPM
+name: Build Unsigned IPA
 
 on:
-  workflow_dispatch:  # 手動実行トリガー
+  workflow_dispatch:  # 手動実行可能にする
 
 jobs:
   build:
     runs-on: macos-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      # CocoaPods や XcodeGen を使わない SwiftPM だけの構成
-      - name: Archive with mxcl/xcodebuild
+      # アーカイブ生成
+      - name: Archive with xcodebuild
         uses: mxcl/xcodebuild@v3
         with:
           action: archive
-          scheme: "IDA Pro - RHgrive"   # ← Package.swift 内 iOSApplication の name
+          scheme: "IDA Pro - RHgrive"
           platform: iOS
           configuration: Release
 
+      # ExportOptions.plist を作成（署名なし）
+      - name: Create ExportOptions.plist
+        run: |
+          cat <<EOF > ExportOptions.plist
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>method</key>
+              <string>ad-hoc</string>
+              <key>signingStyle</key>
+              <string>manual</string>
+              <key>stripSwiftSymbols</key>
+              <false/>
+              <key>compileBitcode</key>
+              <false/>
+              <key>signingCertificate</key>
+              <string>-</string>
+          </dict>
+          </plist>
+          EOF
+
+      # IPA エクスポート（未署名）
       - name: Export IPA
         run: |
           xcodebuild -exportArchive \
-            -archivePath "$(pwd)/IDA Pro - RHgrive.xcarchive" \
-            -exportOptionsPlist "$(pwd)/ExportOptions.plist" \
-            -exportPath "$(pwd)"
+            -archivePath "IDA Pro - RHgrive.xcarchive" \
+            -exportOptionsPlist ExportOptions.plist \
+            -exportPath output
 
-      - name: Upload IPA artifact
+      # IPA アップロード
+      - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
-          name: IDA-IPA
-          path: "IDA Pro - RHgrive.ipa"
+          name: unsigned-ipa
+          path: output/*.ipa
